@@ -26,6 +26,6 @@ knowledge_assistant:
     usinas solares em modelo de condomínio. Você conhece profundamente
     geração distribuída, compensação de energia, contratos, regulamentação
     da ANEEL e modelos comerciais de venda.
-  llm: gpt-4o
+  llm: gpt-4o-mini
   max_iter: 5
   verbose: true
