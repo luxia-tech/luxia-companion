@@ -1,4 +1,5 @@
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
@@ -7,8 +8,6 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 from luxia_companion.config import settings
 from luxia_companion.crew import answer
-from luxia_companion.knowledge.store import count
-from luxia_companion.knowledge.ingestion import ingest_all
 from luxia_companion.whatsapp.client import send_message, validate_request
 
 logging.basicConfig(
@@ -17,19 +16,34 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+_ingestion_ready = False
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Auto-ingest knowledge base if empty (e.g. fresh container)
+
+def _run_ingestion():
+    """Run document ingestion in a background thread so it doesn't block startup."""
+    global _ingestion_ready
     try:
+        from luxia_companion.knowledge.store import count
+        from luxia_companion.knowledge.ingestion import ingest_all
+
         if count() == 0:
             logger.info("Base de conhecimento vazia — iniciando ingestão automática...")
             result = ingest_all()
             logger.info(f"Ingestão concluída: {result['files']} arquivos, {result['chunks']} chunks")
         else:
             logger.info(f"Base de conhecimento já populada ({count()} chunks)")
+        _ingestion_ready = True
     except Exception:
         logger.exception("Erro na ingestão automática — a app continuará sem base")
+        _ingestion_ready = True  # Mark ready even on failure so app keeps running
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start ingestion in background thread — server is available immediately
+    thread = threading.Thread(target=_run_ingestion, daemon=True)
+    thread.start()
+    logger.info("Servidor iniciado — ingestão rodando em background")
     yield
 
 
