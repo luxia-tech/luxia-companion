@@ -13,9 +13,12 @@ class Settings(BaseSettings):
     twilio_auth_token: str
     twilio_whatsapp_from: str = "whatsapp:+14155238886"
 
-    # OpenAI
+    # OpenAI (embeddings + futuros agentes)
     openai_api_key: str
     openai_model_name: str = "gpt-4o"
+
+    # Anthropic
+    anthropic_api_key: str = ""
 
     # Knowledge Base
     chroma_persist_dir: str = "./chroma_data"
