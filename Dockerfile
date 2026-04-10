@@ -7,12 +7,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install dependencies first (layer cache)
+# Copy source and install package
 COPY pyproject.toml ./
+COPY src/ ./src/
 RUN pip install --no-cache-dir .
 
-# Copy source code and knowledge base
-COPY src/ ./src/
+# Copy remaining files
 COPY scripts/ ./scripts/
 COPY knowledge_base/ ./knowledge_base/
 
